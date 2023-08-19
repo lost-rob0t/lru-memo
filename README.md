@@ -6,6 +6,8 @@ Memoize Nim functions
 
 This small package offers a function and a macro to memoize Nim functions.
 
+NOTE: This is a fork of https://github.com/andreaferretti/memo. All I did was add LRU instead of a table.
+
 Usage
 -----
 
@@ -32,6 +34,9 @@ proc f(a: A): B {.memoized.} =
 
 Then `f` will be memoized and recursive calls will be handled correctly (both
 direct self-recursion and mutual recursion).
+
+
+You can set the size of the LRU cache with `-d:cacheSize=1000` or `-d:memo.cacheSie=1000`
 
 Example
 -------
