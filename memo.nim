@@ -1,11 +1,14 @@
-import tables, macros, options
+import lrucache, macros, options
+
+# will this work in threads?
+const cacheSize {.intdefine: "memo.cacheSize".}: int = 100
 
 proc memoize*[A, B](f: proc(a: A): B): proc(a: A): B =
   ## Returns a memoized version of the given procedure.
-  var cache = initTable[A, B]()
+  var cache = newLRuCache[A, B](cacheSize)
 
   result = proc(a: A): B =
-    if cache.hasKey(a):
+    if cache.contains(a):
       result = cache[a]
     else:
       result = f(a)
@@ -66,7 +69,9 @@ proc declCache(owner, argType, retType: NimNode): OwnedCache =
   result.sym = genSym(nskVar, "cache")
 
   template cacheImpl(cache, argType, retType) =
-    var cache = initTable[argType, retType]()
+    when defined(debug):
+      echo "Cache size: ", cacheSize
+    var cache = newLruCache[argType, retType](cacheSize)
   result.decl = getAst(cacheImpl(result.sym, argType, retType))
 
   template declResetCache(cacheName, owner) =
@@ -129,7 +134,7 @@ macro memoized*(e: untyped): auto =
   let atyp = args.toTypes()
 
   let hasArgs = args.len > 0
-  let cache = if hasArgs:
+  var cache = if hasArgs:
     declCache(e, atyp, retType)
   else:
     declCacheNiladic(e, atyp, retType)
@@ -172,7 +177,7 @@ macro memoized*(e: untyped): auto =
   template funImpl(impl, cache, fun, lhs, rhs) =
     impl
     let lhs = rhs
-    if not cache.hasKey(lhs):
+    if not cache.contains(lhs):
       cache[lhs] = fun(lhs)
 
   # check if cache has some and optionally calculate
@@ -196,4 +201,4 @@ macro memoized*(e: untyped): auto =
   # return cache and its owner procedure
   result = newStmtList(cache.decl, fun, cache.reset)
 
-export tables.`[]=`, tables.`[]`, options.`get`
+export lrucache.`[]=`, lrucache.`[]`, options.`get`

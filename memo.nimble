@@ -5,6 +5,7 @@ license       = "Apache2"
 skipFiles     = @["test", "test.nim"]
 
 requires "nim >= 0.17.3"
+requires "lrucache >= 1.1.4"
 
 task test, "run memo tests":
   --hints: off
